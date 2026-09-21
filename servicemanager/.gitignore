@@ -1,0 +1,4 @@
+# Configuración local de laboratorio. No versionar el archivo real.
+.env
+*.log
+evidencias/
