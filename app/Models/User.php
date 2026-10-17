@@ -74,4 +74,17 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class);
     }
+
+    public function wishlists()
+    {
+        return $this->hasMany(Wishlist::class);
+    }
+
+    /**
+     * IDs de productos en favoritos (cacheado por request para las cards)
+     */
+    public function wishlistProductIds(): array
+    {
+        return $this->wishlists()->pluck('product_id')->toArray();
+    }
 }

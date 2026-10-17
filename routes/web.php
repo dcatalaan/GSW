@@ -7,6 +7,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\WishlistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,11 @@ Route::middleware('auth')->group(function () {
     // Reseñas
     Route::post('/productos/{product:slug}/resenas', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/resenas/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Favoritos
+    Route::get('/favoritos', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/favoritos/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::delete('/favoritos/{product}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
 });
 
 // Panel de administración

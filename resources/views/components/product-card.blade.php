@@ -6,6 +6,15 @@
         @if($product->hasDiscount())
             <span class="product-badge badge-sale">-{{ $product->getDiscountPercentage() }}%</span>
         @endif
+        @auth
+            <button type="button"
+                    class="wishlist-btn {{ in_array($product->id, $wishlistIds ?? []) ? 'active' : '' }}"
+                    data-product-id="{{ $product->id }}"
+                    title="Guardar en favoritos"
+                    aria-label="Guardar en favoritos">
+                <x-icon name="heart" :size="18" :fill="in_array($product->id, $wishlistIds ?? [])" />
+            </button>
+        @endauth
     </a>
     <div class="product-card-body">
         <span class="product-card-category">{{ $product->category->name ?? '' }}</span>

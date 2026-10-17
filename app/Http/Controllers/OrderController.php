@@ -169,11 +169,29 @@ class OrderController extends Controller
                 return $order;
             });
 
+            $this->sendConfirmationEmail($order);
+
             return redirect()->route('orders.show', $order->order_number)
                 ->with('success', 'Pedido creado exitosamente. Número: ' . $order->order_number);
 
         } catch (\Exception $e) {
             return back()->with('error', 'Error al procesar el pedido. Intente de nuevo.');
+        }
+    }
+
+    /**
+     * Enviar confirmación por correo (no bloquea el pedido si falla)
+     */
+    protected function sendConfirmationEmail(Order $order): void
+    {
+        try {
+            \Illuminate\Support\Facades\Mail::to($order->user->email)
+                ->send(new \App\Mail\OrderConfirmation($order));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('No se pudo enviar el correo de confirmación', [
+                'order' => $order->order_number,
+                'error' => $e->getMessage(),
+            ]);
         }
     }
 

@@ -32,7 +32,14 @@ class AdminController extends Controller
             ->limit(5)
             ->get();
 
-        return view('admin.dashboard', compact('stats', 'recentOrders'));
+        $lowStockProducts = Product::with('category')
+            ->where('is_active', true)
+            ->where('stock', '<=', 5)
+            ->orderBy('stock')
+            ->limit(10)
+            ->get();
+
+        return view('admin.dashboard', compact('stats', 'recentOrders', 'lowStockProducts'));
     }
 
     // ==================== PRODUCTOS ====================

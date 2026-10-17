@@ -27,5 +27,18 @@ class AppServiceProvider extends ServiceProvider
         View::composer('*', function ($view) {
             $view->with('appName', config('app.name'));
         });
+
+        // IDs de favoritos del usuario (una sola consulta por request)
+        View::composer(['components.product-card', 'products.show'], function ($view) {
+            $ids = [];
+            if (auth()->check()) {
+                static $cached = null;
+                if ($cached === null) {
+                    $cached = auth()->user()->wishlistProductIds();
+                }
+                $ids = $cached;
+            }
+            $view->with('wishlistIds', $ids);
+        });
     }
 }

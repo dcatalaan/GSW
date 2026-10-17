@@ -78,11 +78,47 @@
             </div>
         </div>
 
+        {{-- Stock Bajo --}}
+        @if($lowStockProducts->count())
+        <div class="admin-section">
+            <h2 class="subsection-title">Stock Bajo (5 o menos)</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>SKU</th>
+                            <th>Categoría</th>
+                            <th>Stock</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($lowStockProducts as $product)
+                            <tr>
+                                <td><strong>{{ $product->name }}</strong></td>
+                                <td><code>{{ $product->sku }}</code></td>
+                                <td>{{ $product->category->name ?? '—' }}</td>
+                                <td>
+                                    <span class="{{ $product->stock === 0 ? 'stock-unavailable' : 'text-danger' }}">
+                                        {{ $product->stock === 0 ? 'Agotado' : $product->stock . ' disponibles' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-outline btn-xs">Reponer</a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
         {{-- Pedidos Recientes --}}
         @if($recentOrders->count())
         <div class="admin-section">
-            <h2 class="subsection-title">Pedidos Recientes</h2>
-            <div class="table-responsive">
+            <h2 class="subsection-title">Pedidos Recientes</h2>            <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>

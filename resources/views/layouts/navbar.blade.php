@@ -9,6 +9,7 @@
         {{-- Navegación derecha --}}
         <div class="navbar-actions">
             <a href="{{ route('products.index') }}" class="nav-link">Productos</a>
+            <a href="{{ route('about') }}" class="nav-link">Sobre nosotros</a>
 
             {{-- Tema claro/oscuro --}}
             <button class="nav-link theme-toggle" id="theme-toggle" aria-label="Cambiar tema" title="Cambiar tema">
@@ -39,6 +40,10 @@
                         <a href="{{ route('orders.index') }}" class="dropdown-item">
                             <x-icon name="receipt" :size="17" />
                             Mis Pedidos
+                        </a>
+                        <a href="{{ route('wishlist.index') }}" class="dropdown-item">
+                            <x-icon name="heart" :size="17" />
+                            Favoritos
                         </a>
                         @if(auth()->user()->isAdmin())
                             <a href="{{ route('admin.dashboard') }}" class="dropdown-item">

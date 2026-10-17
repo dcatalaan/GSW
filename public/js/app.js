@@ -103,6 +103,48 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // ==================== WISHLIST TOGGLE (AJAX) ====================
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const productId = this.dataset.productId;
+            const isDetail = this.classList.contains('wishlist-btn-detail');
+
+            try {
+                const response = await fetch(`/favoritos/${productId}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.classList.toggle('active', data.active);
+                    const icon = this.querySelector('svg');
+                    if (icon) {
+                        icon.setAttribute('fill', data.active ? 'currentColor' : 'none');
+                        icon.setAttribute('stroke', data.active ? 'none' : 'currentColor');
+                    }
+                    if (isDetail) {
+                        const label = this.querySelector('.wishlist-label');
+                        if (label) label.textContent = data.active ? 'En favoritos' : 'Guardar en favoritos';
+                    }
+                    showNotification(data.message, 'success');
+                } else {
+                    showNotification(data.message || 'Error al actualizar favoritos', 'error');
+                }
+            } catch (error) {
+                window.location.href = `/favoritos`;
+            }
+        });
+    });
+
     // ==================== NOTIFICATIONS ====================
     function showNotification(message, type = 'success') {
         const notification = document.createElement('div');

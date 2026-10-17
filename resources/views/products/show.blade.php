@@ -88,6 +88,15 @@
                         Agregar al Carrito
                     </button>
                 </form>
+                @auth
+                @php $isFav = in_array($product->id, $wishlistIds ?? []); @endphp
+                <button type="button"
+                        class="wishlist-btn wishlist-btn-detail {{ $isFav ? 'active' : '' }}"
+                        data-product-id="{{ $product->id }}">
+                    <x-icon name="heart" :size="20" :fill="$isFav" />
+                    <span class="wishlist-label">{{ $isFav ? 'En favoritos' : 'Guardar en favoritos' }}</span>
+                </button>
+                @endauth
                 @else
                 <div class="out-of-stock-message">
                     <p>Este producto está actualmente agotado.</p>
