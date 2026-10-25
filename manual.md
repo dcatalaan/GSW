@@ -1,6 +1,6 @@
-# Manual de Uso — GSWStore
+﻿# Manual de Uso — GSWStore
 
-Plataforma de comercio electrónico con búsqueda semántica, chatbot RAG con IA, sistema de pagos y facturación electrónica. Proyecto final de la asignatura de Gestión de Servidores Web.
+Plataforma de comercio electrónico con búsqueda semántica, chatbot RAG con IA y sistema de pagos. Proyecto final de la asignatura de Gestión de Servidores Web.
 
 ---
 
@@ -17,9 +17,9 @@ Plataforma de comercio electrónico con búsqueda semántica, chatbot RAG con IA
 9. [Perfil de usuario](#9-perfil-de-usuario)
 10. [Chatbot inteligente (RAG)](#10-chatbot-inteligente-rag)
 11. [Panel de administración](#11-panel-de-administración)
-12. [Factura electrónica (DTE)](#12-factura-electrónica-dte)
-13. [Despliegue en producción](#13-despliegue-en-producción)
-14. [Cuentas de prueba](#14-cuentas-de-prueba)
+12. [Despliegue en producción](#12-despliegue-en-producción)
+13. [Cuentas de prueba](#13-cuentas-de-prueba)
+14. [Tecnologías utilizadas](#14-tecnologías-utilizadas)
 
 ---
 
@@ -156,7 +156,7 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
   - Estado (pendiente, en proceso, enviado, entregado, cancelado)
   - Estado de pago (pagado, pendiente)
 - Botón "Ver Detalle" para ver el pedido completo
-- Botón "Factura PDF" para descargar la factura
+- Botón para descargar resumen del pedido en PDF
 
 ### Detalle de pedido
 - Ruta: `/pedidos/{número}`
@@ -170,7 +170,7 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
   - Dirección de envío
   - Resumen de costos (subtotal, IVA 13%, total)
   - Lista de productos del pedido
-  - Botón "Factura PDF"
+  - Botón para descargar resumen
 
 ### Rastreo en vivo
 - Solo visible cuando el pedido está en estado "enviado"
@@ -243,7 +243,7 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
   - Teléfono
   - Dirección
   - Municipio / Ciudad
-- Los datos de facturación se usan como receptor en la factura electrónica (DTE)
+- Los datos de facturación se usan para el resumen del pedido
 - La dirección de facturación se pre-llena automáticamente en el checkout
 
 ---
@@ -308,32 +308,10 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Al cambiar a "Enviado": se asigna paquetería, número de guía y fecha estimada de entrega
 - Ver comprobante de transferencia (si aplica)
 
----
+## 12. Despliegue en producción
 
-## 12. Factura electrónica (DTE)
+### Debian 12 (manual)
 
-### Generación
-- Se genera automáticamente al crear un pedido
-- Formato DTE de El Salvador (Documento Tributario Electrónico)
-- Incluye:
-  - Códigos: UUID de generación, número de control, sello de recepción
-  - QR code con enlace de verificación
-  - Emisor: datos ficticios de GSWStore (NIT, NRC, dirección, etc.)
-  - Receptor: datos del perfil del cliente (nombre, documento, NRC, teléfono, dirección)
-  - Tabla de productos con cantidades, precios unitarios y totales
-  - Subtotal, IVA 13%, total a pagar
-  - Valor en letras (ej: "CIENTO UNO 69/100 DOLARES")
-  - Condición de la operación (contado/a crédito)
-  - Responsables de emisor y receptor
-
-### Descargar factura
-- Botón "Factura PDF" en el detalle del pedido
-- Botón "Factura PDF" en el listado de pedidos
-- El archivo se descarga como `DTE-{número}.pdf`
-
----
-
-## 13. Despliegue en producción
 
 ### Debian 12 (manual)
 ```bash
@@ -418,7 +396,7 @@ deploy/
 | Almacén Vectorial | PostgreSQL con extensión pgvector |
 | Generación de Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
 | Chatbot IA | Groq API (Llama 3 / Qwen, capa gratuita) |
-| PDF | dompdf (facturas), BaconQrCode en SVG |
+| PDF | dompdf (resúmenes), BaconQrCode en SVG |
 | Diseño | Contemporary Design System (DM Sans + Cormorant Garamond) |
 | Seguridad TLS | Let's Encrypt / certbot |
 | Despliegue | Docker multicontenedor (Compose) |
@@ -436,7 +414,6 @@ gsw-ecommerce/
 │   │   ├── CartController.php
 │   │   ├── ChatbotController.php
 │   │   ├── HomeController.php
-│   │   ├── InvoiceController.php
 │   │   ├── OrderController.php
 │   │   ├── ProductController.php
 │   │   ├── ProfileController.php
@@ -452,10 +429,8 @@ gsw-ecommerce/
 │   │   └── AppServiceProvider.php
 │   └── Services/
 │       ├── ChatbotRAGService.php
-│       ├── InvoiceService.php
 │       └── SemanticSearchService.php
 ├── config/
-│   ├── invoice.php          # Datos fiscales del emisor (DTE)
 │   ├── semantic.php         # Configuración de búsqueda semántica
 │   └── services.php         # Configuración de Groq API
 ├── database/
@@ -485,7 +460,6 @@ gsw-ecommerce/
 │   ├── components/          # Chatbot, product-card, icon
 │   ├── emails/              # Correos transaccionales
 │   ├── home.blade.php
-│   ├── invoices/            # Plantilla DTE
 │   ├── layouts/             # App, navbar, footer
 │   ├── orders/              # Historial y detalle de pedidos
 │   ├── products/            # Catálogo y detalle
