@@ -7,6 +7,7 @@ use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\WishlistController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,7 +45,6 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 
 // Páginas públicas
-Route::view('/about', 'about')->name('about');
 Route::post('/api/chat', [\App\Http\Controllers\ChatbotController::class, 'chat'])->name('chat.send');
 Route::get('/api/chat/history', [\App\Http\Controllers\ChatbotController::class, 'history'])->name('chat.history');
 Route::get('/api/chat/clear', [\App\Http\Controllers\ChatbotController::class, 'clear'])->name('chat.clear');
@@ -54,7 +54,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/pedidos', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/pedidos/{orderNumber}', [OrderController::class, 'show'])->name('orders.show');
     Route::post('/pedidos', [OrderController::class, 'store'])->name('orders.store');
-    Route::get('/pedidos/{orderNumber}/factura', [\App\Http\Controllers\InvoiceController::class, 'download'])->name('orders.invoice');
 
     // Perfil y facturación
     Route::get('/perfil', [\App\Http\Controllers\ProfileController::class, 'show'])->name('profile.show');
@@ -63,6 +62,11 @@ Route::middleware('auth')->group(function () {
     // Reseñas
     Route::post('/productos/{product:slug}/resenas', [ReviewController::class, 'store'])->name('reviews.store');
     Route::delete('/resenas/{review}', [ReviewController::class, 'destroy'])->name('reviews.destroy');
+
+    // Favoritos
+    Route::get('/favoritos', [WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/favoritos/{product}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    Route::delete('/favoritos/{product}', [WishlistController::class, 'destroy'])->name('wishlist.destroy');
 });
 
 // Panel de administración

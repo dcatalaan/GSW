@@ -46,14 +46,12 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 ### Barra de navegación (navbar)
 - **Logo GSWStore**: clic para ir al inicio
 - **Productos**: acceso al catálogo completo
-- **Sobre nosotros**: información del equipo y del proyecto
 - **Tema claro/oscuro**: botón con icono de sol/luna para cambiar el tema
 - **Carrito**: muestra el número de productos en el carrito
 - **Menú de usuario** (solo si autenticado): Mi Perfil, Mis Pedidos, Favoritos, Panel Admin (solo admin), Cerrar Sesión
 
 ### Pie de página (footer)
 - Navegación: Inicio, Productos, Carrito
-- Sobre GSWStore: enlace a "Sobre Nosotros"
 - Copyright del proyecto
 
 ### Chatbot flotante
@@ -453,7 +451,6 @@ gsw-ecommerce/
 │   ├── js/app.js            # JavaScript principal
 │   └── images/              # Imágenes estáticas
 ├── resources/views/
-│   ├── about.blade.php
 │   ├── admin/               # Dashboard, productos, categorías, pedidos
 │   ├── auth/                # Login, registro
 │   ├── cart/                # Carrito y checkout

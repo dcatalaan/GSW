@@ -18,8 +18,7 @@
 
             {{-- Info --}}
             <div class="footer-section">
-                <h4 class="footer-title">Sobre GSWStore</h4>
-                <a href="{{ route('about') }}" class="footer-link">Sobre Nosotros</a>
+                <h4 class="footer-title">GSWStore</h4>
                 <p class="footer-text-sm">Búsqueda semántica potenciada por IA que entiende la intención de cada consulta.</p>
                 <p class="footer-text-sm">Proyecto de Gestión de Servidores Web — 2026</p>
             </div>

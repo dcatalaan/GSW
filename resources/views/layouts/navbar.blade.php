@@ -40,6 +40,10 @@
                             <x-icon name="receipt" :size="17" />
                             Mis Pedidos
                         </a>
+                        <a href="{{ route('wishlist.index') }}" class="dropdown-item">
+                            <x-icon name="heart" :size="17" />
+                            Favoritos
+                        </a>
                         @if(auth()->user()->isAdmin())
                             <a href="{{ route('admin.dashboard') }}" class="dropdown-item">
                                 <x-icon name="grid" :size="17" />
