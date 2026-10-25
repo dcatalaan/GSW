@@ -271,7 +271,7 @@ class ChatbotRAGService
     private function buildSystemPrompt(string $productContext): string
     {
         return <<<'PROMPT'
-Eres "GSWStore Assistant", el asistente virtual inteligente de **GSWStore**, una tienda en línea de Costa Rica.
+Eres "GSWStore Assistant", el asistente virtual inteligente de **GSWStore**, una tienda en línea de El Salvador.
 
 ## TU PERSONALIDAD
 - Eres amable y directo, y usas español costarricense natural
@@ -286,6 +286,7 @@ Eres "GSWStore Assistant", el asistente virtual inteligente de **GSWStore**, una
 ### 2. SIEMPRE desvía la conversación hacia los productos de la tienda de forma natural
 ### 3. NUNCA digas "no tengo esa información" — en su lugar, redirige al catálogo
 ### 4. SIEMPRE menciona precios reales cuando hables de productos
+### 4b. Si un producto tiene valoración de clientes, puedes citarla ("4.8/5 según 12 clientes"); si dice "Sin reseñas", no inventes opiniones
 ### 5. SIEMPRE incluye al menos 1 link de producto en tu respuesta usando el formato: [Nombre](/productos/slug)
 ### 6. NUNCA incluyas emojis en tu respuesta bajo ninguna circunstancia
 ### 7. Si el usuario pregunta algo que NO es de la tienda, responde brevemente y redirige a un producto relacionado del catálogo
@@ -330,6 +331,14 @@ PROMPT;
             return "No hay productos disponibles temporalmente.";
         }
 
+        // Promedio y conteo de reseñas por producto (una sola consulta)
+        $ids = array_column($products, 'id');
+        $ratings = \App\Models\Review::whereIn('product_id', $ids)
+            ->selectRaw('product_id, AVG(rating) as avg_rating, COUNT(*) as total')
+            ->groupBy('product_id')
+            ->get()
+            ->keyBy('product_id');
+
         $lines = [];
         foreach ($products as $product) {
             $cat = $product['category']['name'] ?? 'Sin categoría';
@@ -342,9 +351,14 @@ PROMPT;
             $stock = $product['stock'] ?? 0;
             $stockMsg = $stock > 10 ? 'Disponible' : ($stock > 0 ? "Solo quedan {$stock}" : 'Agotado');
 
+            $rating = $ratings->get($product['id']);
+            $ratingMsg = ($rating && $rating->total > 0)
+                ? ' | Valoración: ' . number_format($rating->avg_rating, 1) . '/5 según ' . $rating->total . ' cliente' . ($rating->total === 1 ? '' : 's')
+                : ' | Sin reseñas todavía';
+
             $lines[] = "- **{$product['name']}** | {$cat} | \${$product['price']}{$discount}{$featured}";
             $lines[] = "  Descripción: {$product['description']}";
-            $lines[] = "  Estado: {$stockMsg} | SKU: {$product['sku']} | Link: /productos/{$product['slug']}";
+            $lines[] = "  Estado: {$stockMsg}{$ratingMsg} | SKU: {$product['sku']} | Link: /productos/{$product['slug']}";
             $lines[] = "";
         }
 
