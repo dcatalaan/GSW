@@ -1,0 +1,75 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gswstore-web:1.0
+    ports:
+      - "8080:80"
+    env_file:
+      - .env.docker
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      EMBEDDING_URL: http://embeddings:8000/embed
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-net
+    volumes:
+      - storage_data:/var/www/html/storage/app/public
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  db:
+    image: pgvector/pgvector:pg16
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gsw_ecommerce}
+      POSTGRES_USER: ${POSTGRES_USER:-gsw_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - app-net
+
+  embeddings:
+    build:
+      context: ./docker/embeddings
+    image: gswstore-embeddings:1.0
+    profiles:
+      - ia
+    environment:
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+    restart: unless-stopped
+    networks:
+      - app-net
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+networks:
+  app-net:
+    driver: bridge
+
+volumes:
+  db_data:
+  storage_data:

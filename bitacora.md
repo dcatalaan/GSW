@@ -1,6 +1,6 @@
 # Bitácora — GSWStore
 
-E-commerce completo con búsqueda semántica, chatbot RAG con IA. Proyecto final de la materia Gestión de Servidores Web.
+E-commerce completo con búsqueda semántica, chatbot RAG con IA y facturación electrónica estilo DTE de El Salvador. Proyecto final de la materia Gestión de Servidores Web.
 
 Equipo: Ángel Fernández, Ricardo Retana, Kevin Umaña, Diego Catalán.
 
@@ -59,3 +59,61 @@ Scripts en `deploy/scripts/`, configuración en `deploy/nginx/gsw-ecommerce.conf
 - `app/Models/` — Product, Order, Review, TrackingEvent, User, Category, CartItem
 - `deploy/` — Nginx + scripts de instalación, despliegue, backup y monitoreo
 - `public/css/app.css` — sistema de diseño (modo claro y oscuro)
+- `Dockerfile`, `compose.yaml`, `.dockerignore`, `db/init/` — despliegue multicontenedor (Guía 6)
+
+## Guía 6 — Despliegue multicontenedor con Docker
+
+### Arquitectura
+
+```
+navegador → localhost:8080 → web:80 → db:5432 (red interna app-net)
+                                     ↘ embeddings:8000 (red interna, perfil ia)
+```
+
+- `web`: imagen propia `gswstore-web:1.0` (PHP 8.3 + Apache + Laravel). Único servicio publicado.
+- `db`: `pgvector/pgvector:pg16` sin puertos al host. Volumen `db_data` en `/var/lib/postgresql/data` + init `db/init/01-extensions.sql` (extensión `vector`; el esquema lo crean las migraciones).
+- `embeddings`: Flask + sentence-transformers, solo red interna, healthcheck en `/health`.
+- `web` usa `DB_HOST=db` (DNS interno de Compose); `localhost` dentro del contenedor web apunta al propio contenedor, no a MySQL/Postgres.
+- `depends_on` con `condition: service_healthy` + `restart: unless-stopped` en los tres servicios.
+- `storage_data` conserva comprobantes e imágenes subidas ante recreaciones del contenedor web.
+
+### Decisiones
+
+- Dockerfile de una etapa ordenado para caché: extensiones → composer install → código → entrypoint. Cambiar solo Blade/PHP reutiliza todas las capas previas.
+- El entrypoint espera a `db` (hasta 60 s), genera `APP_KEY` si falta, crea el storage link, migra y cachea config en runtime (así respetan las env vars).
+- `.env.docker` real excluido de Git (`.env.docker.example` versionado con valores ficticios).
+- `down` conserva volúmenes; `down -v` los destruye (no usar con datos).
+
+### Comandos y resultados (plantilla de bitácora de despliegue)
+
+| Fecha | Comando | Resultado esperado |
+|---|---|---|
+| — | `docker build -t gswstore-web:1.0 .` | Imagen construida sin errores |
+| — | `docker compose config` | Configuración válida, `db` sin `ports` |
+| — | `docker compose up -d --build` | `web` + `db` en ejecución |
+| — | `docker compose exec web getent hosts db` | Resuelve IP interna de `db` |
+| — | insertar registro, `down`, `up -d` | El registro permanece |
+| — | `docker compose stop db` → 503 → `start db` | La app se recupera sola |
+
+### Respuestas de discusión (Guía 6 / ejercicio)
+
+- **58. ¿Por qué no `localhost`?** Dentro del contenedor, `localhost` es el propio contenedor; `db` lo resuelve el DNS interno de Compose al contenedor de la base.
+- **59. ¿Red interna?** Aisla el tráfico entre servicios y permite resolución por nombre sin exponer nada al host.
+- **60. ¿Contenedor vs volumen?** Eliminar el contenedor borra su capa efímera; el volumen nombrado sobrevive y conserva los datos.
+- **61. ¿Riesgo de publicar 3306?** Expone la base a la red del laboratorio/internet (escaneos, fuerza bruta); solo `web` necesita llegar a ella.
+- **62. ¿Ventaja del Dockerfile?** Construcción reproducible y versionada en vez de servidores configurados a mano.
+- **63. ¿Fuera del repositorio?** `.env` / `.env.docker` con credenciales, logs, evidencias locales.
+- **64. ¿Varias réplicas web?** Escalar `web` tras un balanceador, sesiones y `storage/app/public` compartidos (volumen externo o S3) y migraciones ejecutadas una sola vez.
+
+## Ejercicio ServiceManager (puntos 1–43)
+
+Implementación literal del ejercicio en `servicemanager/`: página de estado PHP + MySQL 8.4 por Compose.
+
+- **A. Diseño**: proyecto `servicemanager`; servicios `web` (imagen propia `gswstore-web:1.0`, PHP 8.3 + Apache) y `db` (MySQL 8.4); `8080:80`; red interna `app-net`; volumen `db_data`; `web` usa `DB_HOST=db`.
+- **B. Estructura**: `app/index.php`, `db/init/01-schema.sql`, `Dockerfile`, `compose.yaml`, `.dockerignore`, `.gitignore`, `.env` (+ `.env.example`), `README.md`, `respuestas-discusion.txt`.
+- **C. Imagen**: `docker build -t gswstore-web:1.0 .`; verificar con `docker image ls/inspect`; el re-build sin cambios reutiliza caché (las dependencias van antes que el código).
+- **D. App**: `index.php` muestra estado web, conexión/versión MySQL, conteo y tabla `servicios`; responde 503 si cae la BD.
+- **E. BD**: tabla `servicios(id, nombre, estado)` + 4 registros del proyecto en `01-schema.sql`, que además replica el esquema real (usuarios, categorías, productos, pedidos, reseñas) con datos iniciales; conexión por variables de entorno.
+- **F. Compose**: `web`/`db`, red, volumen, `depends_on` healthy, `restart: unless-stopped`; validar con `docker compose config`; desplegar con `up -d --build`.
+- **G–I**: comandos de red/DNS, persistencia (`down`/`up -d`) y fallo/recuperación (`stop db` → 503 → `start db`) documentados en `servicemanager/README.md`.
+- **J**: README actualizado; respuestas 58–64 en `servicemanager/respuestas-discusion.txt`; `.env` excluido de Git.

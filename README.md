@@ -241,6 +241,59 @@ El proyecto utiliza el **Contemporary Design System** con:
 - **Layout**: Bento grids, responsive, dark mode ready
 - **Accesibilidad**: WCAG 2.2 AA, focus states, semantic HTML
 
+## Despliegue con Docker (Guía 6)
+
+Aplicación multicontenedor equivalente al despliegue en VM: `web` (Laravel + PHP 8.3 + Apache, imagen propia) + `db` (PostgreSQL + pgvector, interna) + `embeddings` (Flask, perfil `ia`).
+
+```
+navegador → localhost:8080 → web:80 → db:5432 (red interna app-net)
+                                       ↘ embeddings:8000 (red interna)
+```
+
+```bash
+# 1. Variables de laboratorio (no versionar el archivo real)
+cp .env.docker.example .env.docker
+
+# 2. Validar la configuración antes de desplegar
+docker compose config
+
+# 3. Construir imagen propia y desplegar
+docker build -t gswstore-web:1.0 .
+docker compose up -d --build
+
+# 4. Estado y logs
+docker compose ps
+docker compose logs -f db
+docker compose logs --tail=50 web
+
+# 5. Migraciones + seeders iniciales (si la BD está vacía)
+docker compose exec web php artisan migrate --force
+docker compose exec web php artisan db:seed --force
+
+# 6. Con IA (búsqueda semántica completa)
+docker compose --profile ia up -d --build
+```
+
+### Pruebas (matriz Guía 6)
+
+| Prueba | Comando | Resultado esperado |
+|---|---|---|
+| Red interna | `docker network inspect gsw-ecommerce_app-net` | `web` y `db` en `app-net` |
+| DNS interno | `docker compose exec web getent hosts db` | Resuelve IP de `db` |
+| Aislamiento | `docker compose ps` / `config` | `db` sin puertos publicados |
+| Persistencia | insertar registro, `down`, `up -d` | El registro permanece (volumen `db_data`) |
+| Fallo/recuperación | `docker compose stop db` (app responde 503) luego `start db` | La app se recupera sola |
+| Recreación web | `docker compose up -d --force-recreate web` | Sin pérdida de datos |
+
+### Detención
+
+```bash
+docker compose stop    # pausa sin borrar nada
+docker compose down    # elimina contenedores y red, conserva volúmenes
+```
+
+Nunca usar `down -v` con datos importantes: elimina también los volúmenes nombrados.
+
 ## Licencia
 
 MIT License — Proyecto Académico 2026

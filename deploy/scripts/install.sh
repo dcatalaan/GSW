@@ -1,12 +1,7 @@
 #!/bin/bash
-# =============================================================================
-# GSW E-Commerce — Script de Instalación para Debian 12 (Bookworm)
-# Servidor: Nginx + PHP-FPM + PostgreSQL + pgvector
-# =============================================================================
 
 set -e
 
-# Colores para output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -16,7 +11,6 @@ log() { echo -e "${GREEN}[GSW]${NC} $1"; }
 warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 error() { echo -e "${RED}[ERROR]${NC} $1"; exit 1; }
 
-# Variables
 APP_DIR="/var/www/gsw-ecommerce"
 DB_NAME="gsw_ecommerce"
 DB_USER="gsw_user"
@@ -24,17 +18,9 @@ DB_PASS=$(openssl rand -hex 16)
 DOMAIN="gsw-ecommerce.local"
 GIT_BRANCH="master"
 
-# =============================================================================
-# 1. ACTUALIZAR SISTEMA
-# =============================================================================
 log "Actualizando sistema..."
 apt update && apt upgrade -y
 
-# =============================================================================
-# 1b. REPOSITORIOS EXTERNOS (PHP 8.3 Sury + PostgreSQL PGDG)
-# Debian 12 trae PHP 8.2 por defecto y no incluye pgvector:
-# se agregan los repositorios oficiales de Sury y PGDG.
-# =============================================================================
 log "Agregando repositorios Sury (PHP) y PGDG (PostgreSQL)..."
 apt install -y lsb-release ca-certificates apt-transport-https software-properties-common gnupg2
 
@@ -46,9 +32,6 @@ echo "deb [signed-by=/usr/share/keyrings/postgresql.gpg] http://apt.postgresql.o
 
 apt update
 
-# =============================================================================
-# 2. INSTALAR DEPENDENCIAS DEL SISTEMA
-# =============================================================================
 log "Instalando dependencias del sistema..."
 apt install -y \
     nginx \
@@ -79,27 +62,19 @@ apt install -y \
     certbot \
     python3-certbot-nginx
 
-# =============================================================================
-# 3. CONFIGURAR FIREWALL (UFW)
-# =============================================================================
 log "Configurando firewall..."
 ufw allow OpenSSH
 ufw allow 'Nginx Full'
 ufw --force enable
 
-# =============================================================================
-# 4. CONFIGURAR POSTGRESQL + PGVECTOR
-# =============================================================================
 log "Configurando PostgreSQL..."
 systemctl enable postgresql
 systemctl start postgresql
 
-# Crear usuario y base de datos
 sudo -u postgres psql -c "CREATE USER ${DB_USER} WITH ENCRYPTED PASSWORD '${DB_PASS}';"
 sudo -u postgres psql -c "CREATE DATABASE ${DB_NAME} OWNER ${DB_USER};"
 sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};"
 
-# Instalar extensión pgvector (versión según el PostgreSQL instalado)
 log "Instalando extensión pgvector..."
 PG_VER=$(ls /etc/postgresql/ 2>/dev/null | head -1)
 if [ -z "$PG_VER" ]; then
@@ -107,18 +82,13 @@ if [ -z "$PG_VER" ]; then
 fi
 apt install -y "postgresql-${PG_VER}-pgvector"
 
-# Habilitar pgvector en la base de datos
 sudo -u postgres psql -d ${DB_NAME} -c "CREATE EXTENSION IF NOT EXISTS vector;"
 sudo -u postgres psql -d ${DB_NAME} -c "ALTER EXTENSION vector UPDATE;"
 
 log "PostgreSQL y pgvector configurados."
 
-# =============================================================================
-# 5. CONFIGURAR PHP-FPM
-# =============================================================================
 log "Configurando PHP-FPM..."
 
-# Ajustes de PHP para Laravel
 PHP_FPM_POOL="/etc/php/8.3/fpm/pool.d/www.conf"
 sed -i 's/upload_max_filesize = .*/upload_max_filesize = 20M/' /etc/php/8.3/fpm/php.ini
 sed -i 's/post_max_size = .*/post_max_size = 25M/' /etc/php/8.3/fpm/php.ini
@@ -128,20 +98,13 @@ sed -i 's/max_execution_time = .*/max_execution_time = 60/' /etc/php/8.3/fpm/php
 systemctl restart php8.3-fpm
 systemctl enable php8.3-fpm
 
-# =============================================================================
-# 6. INSTALAR COMPOSER
-# =============================================================================
 log "Instalando Composer..."
 curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# =============================================================================
-# 7. CLONAR/DESPLEGAR LA APLICACIÓN
-# =============================================================================
 log "Desplegando aplicación..."
 mkdir -p /var/www
 cd /var/www
 
-# Si el repositorio ya existe, hacer pull; si no, crear directorio
 if [ -d "$APP_DIR/.git" ]; then
     cd $APP_DIR
     git pull origin $GIT_BRANCH
@@ -149,7 +112,6 @@ else
     mkdir -p $APP_DIR
 fi
 
-# Copiar archivos del proyecto (si se ejecuta desde el directorio del proyecto)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
@@ -160,23 +122,16 @@ fi
 
 cd $APP_DIR
 
-# =============================================================================
-# 8. CONFIGURAR LARAVEL
-# =============================================================================
 log "Configurando Laravel..."
 
-# Instalar dependencias
 composer install --no-dev --optimize-autoloader --no-interaction
 
-# Configurar .env
 if [ ! -f .env ]; then
     cp .env.example .env
 fi
 
-# Generar APP_KEY
 php artisan key:generate --force
 
-# Configurar variables de entorno en .env
 sed -i "s/APP_ENV=local/APP_ENV=production/" .env
 sed -i "s/APP_DEBUG=true/APP_DEBUG=false/" .env
 sed -i "s|APP_URL=.*|APP_URL=https://${DOMAIN}|" .env
@@ -188,31 +143,23 @@ sed -i "s/DB_USERNAME=.*/DB_USERNAME=${DB_USER}/" .env
 sed -i "s/DB_PASSWORD=.*/DB_PASSWORD=${DB_PASS}/" .env
 sed -i "s|EMBEDDING_URL=.*|EMBEDDING_URL=http://127.0.0.1:8000/embed|" .env
 
-# Clave de Groq para el chatbot RAG (obligatoria para respuestas con IA)
 if grep -q "^GROQ_API_KEY=$" .env 2>/dev/null || ! grep -q "^GROQ_API_KEY=gsk_" .env 2>/dev/null; then
     warn "Configura tu clave gratuita en https://console.groq.com y agregala al .env:"
     warn "  GROQ_API_KEY=gsk_..."
 fi
 
-# Configurar caché
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Ejecutar migraciones
 php artisan migrate --force
 
-# Ejecutar seeders (opcional, solo en primera instalación)
 if [ "$1" = "--seed" ]; then
     php artisan db:seed --force
 fi
 
-# Crear storage link
 php artisan storage:link
 
-# =============================================================================
-# 9. CONFIGURAR PERMISOS
-# =============================================================================
 log "Configurando permisos..."
 chown -R www-data:www-data $APP_DIR
 find $APP_DIR -type d -exec chmod 755 {} \;
@@ -220,37 +167,25 @@ find $APP_DIR -type f -exec chmod 644 {} \;
 chmod -R 775 $APP_DIR/storage
 chmod -R 775 $APP_DIR/bootstrap/cache
 
-# =============================================================================
-# 10. CONFIGURAR NGINX
-# =============================================================================
 log "Configurando Nginx..."
 
-# Copiar configuración del sitio
 cp "$SCRIPT_DIR/../nginx/gsw-ecommerce.conf" /etc/nginx/sites-available/gsw-ecommerce
 
-# Habilitar el sitio
 ln -sf /etc/nginx/sites-available/gsw-ecommerce /etc/nginx/sites-enabled/
 
-# Desactivar el sitio por defecto
 rm -f /etc/nginx/sites-enabled/default
 
-# Verificar configuración
 nginx -t
 
 systemctl restart nginx
 systemctl enable nginx
 
-# =============================================================================
-# 11. CONFIGURAR SSL CON LET'S ENCRYPT
-# =============================================================================
 log "Configurando SSL..."
 
-# Para certificado auto-firmado (desarrollo)
 if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
     warn "Para producción, ejecuta:"
     warn "certbot --nginx -d ${DOMAIN} -d www.${DOMAIN}"
 
-    # Generar certificado auto-firmado para desarrollo
     mkdir -p /etc/letsencrypt/live/${DOMAIN}
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
         -keyout /etc/letsencrypt/live/${DOMAIN}/privkey.pem \
@@ -258,23 +193,17 @@ if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
         -subj "/C=SV/ST=Santa Tecla/L=Santa Tecla/O=GSW/CN=${DOMAIN}"
 fi
 
-# =============================================================================
-# 12. CONFIGURAR SERVICIO DE BÚSQUEDA SEMÁNTICA (Python)
-# =============================================================================
 log "Configurando servicio de embeddings..."
 
 EMBEDDING_DIR="/opt/gsw-embeddings"
 mkdir -p $EMBEDDING_DIR
 
-# Crear entorno virtual
 python3 -m venv $EMBEDDING_DIR/venv
 source $EMBEDDING_DIR/venv/bin/activate
 
-# Instalar dependencias de Python
 pip install --upgrade pip
 pip install flask sentence-transformers numpy
 
-# Crear servicio Flask para embeddings
 cat > $EMBEDDING_DIR/app.py << 'PYEOF'
 from flask import Flask, request, jsonify
 from sentence_transformers import SentenceTransformer
@@ -283,7 +212,6 @@ import os
 
 app = Flask(__name__)
 
-# Cargar modelo al iniciar
 model_name = os.environ.get('EMBEDDING_MODEL', 'all-MiniLM-L6-v2')
 model = SentenceTransformer(model_name)
 
@@ -311,7 +239,6 @@ if __name__ == '__main__':
     app.run(host='127.0.0.1', port=8000, debug=False)
 PYEOF
 
-# Crear systemd service para el servicio de embeddings
 cat > /etc/systemd/system/gsw-embeddings.service << SVCEOF
 [Unit]
 Description=GSW E-Commerce Embedding Service
@@ -334,15 +261,9 @@ systemctl daemon-reload
 systemctl enable gsw-embeddings
 systemctl start gsw-embeddings
 
-# =============================================================================
-# 13. CONFIGURAR CRON PARA LARAVEL
-# =============================================================================
 log "Configurando Cron..."
 (crontab -l 2>/dev/null; echo "* * * * * cd ${APP_DIR} && php artisan schedule:run >> /dev/null 2>&1") | crontab -
 
-# =============================================================================
-# 14. CONFIGURAR LOG ROTATION
-# =============================================================================
 cat > /etc/logrotate.d/gsw-ecommerce << LOGEOF
 ${APP_DIR}/storage/logs/*.log {
     daily
@@ -356,9 +277,6 @@ ${APP_DIR}/storage/logs/*.log {
 }
 LOGEOF
 
-# =============================================================================
-# RESUMEN
-# =============================================================================
 echo ""
 echo "============================================="
 echo -e "${GREEN} INSTALACIÓN COMPLETADA${NC}"

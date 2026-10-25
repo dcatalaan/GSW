@@ -12,6 +12,8 @@ node_modules/
 .env
 .env.backup
 .env.production
+.env.docker
+evidencias/
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
