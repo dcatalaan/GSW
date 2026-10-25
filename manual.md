@@ -1,6 +1,6 @@
 ﻿# Manual de Uso — GSWStore
 
-Plataforma de comercio electrónico con búsqueda semántica, chatbot RAG con IA y sistema de pagos. Proyecto final de la asignatura de Gestión de Servidores Web.
+Plataforma de comercio electrónico con búsqueda semántica, chatbot RAG con IA, sistema de pagos y facturación electrónica. Proyecto final de la asignatura de Gestión de Servidores Web.
 
 ---
 
@@ -20,6 +20,7 @@ Plataforma de comercio electrónico con búsqueda semántica, chatbot RAG con IA
 12. [Despliegue en producción](#12-despliegue-en-producción)
 13. [Cuentas de prueba](#13-cuentas-de-prueba)
 14. [Tecnologías utilizadas](#14-tecnologías-utilizadas)
+15. [Estructura del proyecto](#15-estructura-del-proyecto)
 
 ---
 
@@ -37,11 +38,25 @@ php artisan serve --host=127.0.0.1 --port=8000
 ```
 
 ### Detener el servidor
-Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
+Presiona `Ctrl+C` en la terminal donde se está ejecutando el servidor.
+
+### Pantalla de login
+![Pantalla de login](screenshots/05-login.png)
+
+### Pantalla de registro
+![Pantalla de registro](screenshots/06-registro.png)
 
 ---
 
 ## 2. Navegación general
+
+### Página principal
+![Página principal](screenshots/01-inicio.png)
+
+La página principal muestra:
+- Categorías disponibles (Deportes, Tecnología, Hogar, Moda, Outdoor)
+- Productos destacados con descuentos
+- Botón del chatbot en la esquina inferior derecha
 
 ### Barra de navegación (navbar)
 - **Logo GSWStore**: clic para ir al inicio
@@ -52,6 +67,7 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 
 ### Pie de página (footer)
 - Navegación: Inicio, Productos, Carrito
+- Sobre GSWStore: enlace a "Sobre Nosotros"
 - Copyright del proyecto
 
 ### Chatbot flotante
@@ -64,6 +80,8 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 ## 3. Catálogo y búsqueda
 
 ### Catálogo de productos
+![Catálogo de productos](screenshots/02-productos.png)
+
 - Ruta: `/productos`
 - Filtros disponibles:
   - Búsqueda por nombre o descripción
@@ -73,6 +91,7 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Cada tarjeta de producto muestra: imagen, nombre, categoría, descripción corta, precio y botón de agregar al carrito
 - Productos con descuento muestran el porcentaje de descuento y el precio original tachado
 - Productos destacados muestran una insignia de destacado
+- Botón de corazón para guardar en favoritos
 
 ### Búsqueda semántica
 - Ruta: `/buscar?q=término`
@@ -81,12 +100,22 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Si no hay resultados, sugiere categorías para explorar
 
 ### Detalle de producto
+![Detalle de producto](screenshots/03-detalle-producto.png)
+
 - Ruta: `/productos/{slug}`
 - Muestra: imagen, nombre, categoría, calificación promedio, precio, stock, SKU, descripción, botón de agregar al carrito
 - Selector de cantidad antes de agregar
 - Reseñas de otros clientes con calificación y comentarios
 - Productos relacionados por similitud semántica
 - Botón "Guardar en favoritos" (solo para usuarios autenticados)
+
+### Reseñas de producto
+![Reseñas de producto](screenshots/18-resenas-producto.png)
+
+- Muestra calificación promedio (estrellas)
+- Distribución de calificaciones (barras 1-5 estrellas)
+- Lista de reseñas con avatar, nombre, insignia "Comprador verificado", fecha, calificación, título y comentario
+- Formulario para dejar reseña (solo para usuarios que recibieron el producto)
 
 ---
 
@@ -98,6 +127,8 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Desde el chatbot: botón "Agregar" en las tarjetas de productos
 
 ### Ver el carrito
+![Carrito de compras](screenshots/04-carrito.png)
+
 - Ruta: `/carrito`
 - Muestra todos los productos agregados con imagen, nombre, categoría, precio, cantidad y subtotal
 - Permite modificar la cantidad o eliminar productos
@@ -110,7 +141,7 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Total final
 - Formulario de dirección de envío
 - Notas opcionales
-- Selección de método de pago
+- Selección de método de pago (tarjeta, transferencia, efectivo)
 
 ---
 
@@ -145,6 +176,8 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 ## 6. Pedidos y rastreo
 
 ### Historial de pedidos
+![Historial de pedidos](screenshots/10-pedidos.png)
+
 - Ruta: `/pedidos` (requiere autenticación)
 - Muestra todos los pedidos del usuario con:
   - Número de pedido
@@ -154,9 +187,10 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
   - Estado (pendiente, en proceso, enviado, entregado, cancelado)
   - Estado de pago (pagado, pendiente)
 - Botón "Ver Detalle" para ver el pedido completo
-- Botón para descargar resumen del pedido en PDF
 
 ### Detalle de pedido
+![Detalle de pedido](screenshots/11-detalle-pedido.png)
+
 - Ruta: `/pedidos/{número}`
 - Muestra:
   - Número y fecha del pedido
@@ -168,7 +202,6 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
   - Dirección de envío
   - Resumen de costos (subtotal, IVA 13%, total)
   - Lista de productos del pedido
-  - Botón para descargar resumen
 
 ### Rastreo en vivo
 - Solo visible cuando el pedido está en estado "enviado"
@@ -216,6 +249,8 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Solo disponible para usuarios autenticados
 
 ### Ver favoritos
+![Favoritos](screenshots/09-favoritos.png)
+
 - Ruta: `/favoritos` (requiere autenticación)
 - Muestra todos los productos guardados en formato de cuadrícula
 - Si no hay favoritos, muestra un mensaje invitando a explorar productos
@@ -229,6 +264,8 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 ## 9. Perfil de usuario
 
 ### Ver y editar perfil
+![Perfil de usuario](screenshots/08-perfil.png)
+
 - Ruta: `/perfil` (requiere autenticación)
 - Datos personales:
   - Nombre (editable)
@@ -249,6 +286,8 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 ## 10. Chatbot inteligente (RAG)
 
 ### Abrir el chatbot
+![Chatbot abierto](screenshots/16-chatbot-abrir.png)
+
 - Botón circular en la esquina inferior derecha de todas las páginas
 - Se abre una ventana de chat
 
@@ -263,6 +302,9 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - **Panel de productos**: muestra los productos específicos mencionados por el asistente con imagen, nombre, precio y botón "Agregar"
 - **Botones rápidos**: Deportes, Baratos, Recomendar, Tecnología, Destacados
 - **Indicador de escritura**: animación mientras el asistente genera la respuesta
+
+### Respuesta del chatbot
+![Respuesta del chatbot](screenshots/17-chatbot-respuesta.png)
 
 ### Ejemplos de uso
 - "¿Qué productos de tecnología tienen?" → muestra audífonos y smartwatch
@@ -279,11 +321,15 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Login con credenciales de admin
 
 ### Dashboard
+![Dashboard de administración](screenshots/12-admin-dashboard.png)
+
 - Estadísticas: total de productos, pedidos totales, pedidos pendientes, usuarios, ingresos
 - Pedidos recientes (últimos 5)
 - Accesos rápidos: Gestionar Productos, Categorías, Pedidos, Búsqueda Semántica
 
 ### Gestión de productos
+![Gestión de productos](screenshots/13-admin-productos.png)
+
 - Ruta: `/admin/productos`
 - Lista todos los productos con imagen, nombre, SKU, categoría, precio, stock, estado
 - Filtros: búsqueda por nombre, categoría
@@ -293,23 +339,25 @@ Presiona `Ctrl+C` en la terminal donde se ejecuta el servidor.
 - Regenerar embeddings: botón para recalcular los vectores semánticos de todos los productos
 
 ### Gestión de categorías
+![Gestión de categorías](screenshots/14-admin-categorias.png)
+
 - Ruta: `/admin/categorias`
 - Lista de categorías con conteo de productos
 - Crear nueva categoría: nombre y descripción
 - Eliminar categoría
 
 ### Gestión de pedidos
+![Gestión de pedidos](screenshots/15-admin-pedidos.png)
+
 - Ruta: `/admin/pedidos`
 - Lista de pedidos con número, cliente, items, total, pago, estado, fecha
 - Filtro por estado
 - Cambiar estado del pedido (dropdown que envía automáticamente)
 - Al cambiar a "Enviado": se asigna paquetería, número de guía y fecha estimada de entrega
-- Ver comprobante de transferencia (si aplica)
+
+---
 
 ## 12. Despliegue en producción
-
-### Debian 12 (manual)
-
 
 ### Debian 12 (manual)
 ```bash
@@ -364,7 +412,7 @@ deploy/
 
 ---
 
-## 14. Cuentas de prueba
+## 13. Cuentas de prueba
 
 | Rol | Email | Contraseña | Acceso |
 |---|---|---|---|
@@ -383,7 +431,7 @@ deploy/
 
 ---
 
-## Tecnologías utilizadas
+## 14. Tecnologías utilizadas
 
 | Componente | Tecnología |
 |---|---|
@@ -401,7 +449,7 @@ deploy/
 
 ---
 
-## Estructura del proyecto
+## 15. Estructura del proyecto
 
 ```
 gsw-ecommerce/
